@@ -1,0 +1,75 @@
+//Open the developer console 
+//IN the console, you should see a text with `top` in it,change it to the option similar to `sandbox-maui-preact-container`
+//Paste the below script into the console, if it doesn't let you paste, type `allow pasting` and hit enter
+
+// 1. Find the "Availability domain" label
+const adLabel = [...document.querySelectorAll('label')]
+    .find(l => l.innerText.trim() === 'Availability domain');
+
+if (!adLabel) {
+    throw 'Availability domain label not found (wrong page or language)';
+}
+
+// 2. Walk up DOM until we find the AD inputs
+let ads = [];
+let parent = adLabel;
+
+while (parent && ads.length === 0) {
+    parent = parent.parentElement;
+    if (parent) {
+        ads = [...parent.querySelectorAll('input[type="radio"], input[type="checkbox"], input')];
+    }
+}
+
+if (ads.length === 0) {
+    throw 'No availability domain inputs found';
+}
+
+console.log('Found ADs:', ads.map(a => a.value));
+
+// 3. State
+let adIndex = 0;
+let switchInterval = null;
+
+// 4. Attempt create on current AD
+function attemptCreate() {
+    const ad = ads[adIndex];
+    if (!ad) return;
+
+    const adName = ad.value.replace('LCyd:', '');
+    ad.click();
+    console.log('Switched to', adName);
+
+    const createButton = [...document.querySelectorAll('button')]
+        .find(b => b.innerText.trim() === 'Create');
+
+    if (createButton) {
+        createButton.click();
+        console.log('Clicked Create on', adName);
+    } else {
+        console.log('Create button not found on', adName);
+    }
+
+    adIndex++;
+
+    // End of cycle → cooldown
+    if (adIndex >= ads.length) {
+        console.log('All ADs tried. Cooling down 30s...');
+        clearInterval(switchInterval);
+
+        setTimeout(() => {
+            adIndex = 0;
+            startCycle();
+        }, 30000);
+    }
+}
+
+// 5. Start cycle
+function startCycle() {
+    attemptCreate();
+    switchInterval = setInterval(attemptCreate, 5000);
+}
+
+startCycle();
+// Stop manually with:
+// clearInterval(switchInterval);
